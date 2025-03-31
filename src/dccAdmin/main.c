@@ -10,6 +10,17 @@
 #include "../input_manager/manager.h"
 // TODO: Entender qué hace eso
 
+
+
+
+
+
+
+
+
+
+
+
 typedef struct proceso {
   // Para lista ligada (LL)
   struct proceso* siguiente;
@@ -23,7 +34,72 @@ typedef struct proceso {
   int exit_code;
 } Proceso;
 
-void start(const char *executable_path, char *const argv[], struct proceso* procesos){
+
+
+
+
+
+
+
+
+void agregar_proceso(struct proceso* procesos, char name[256], pid_t pid){
+  if(procesos == NULL){
+    // Testear que se cumpla
+    strcpy(procesos->nombre, name);
+    printf(">>>> testeando nombre %s v/s copiado %s\n", name, procesos->nombre);
+    procesos->anterior = NULL;
+    procesos->siguiente = NULL;
+    procesos->exit_code = -1;
+    procesos->pid = pid;
+    procesos->tiempo_inicio = time(NULL);
+    procesos->tiempo_final = 0;
+  }
+  else{
+    struct proceso* nuevo_proceso = calloc(1, sizeof(struct proceso));
+    strcpy(nuevo_proceso->nombre, name);
+    printf(">>>> testeando nombre %s v/s copiado %s\n", name, nuevo_proceso->nombre);
+    nuevo_proceso->anterior = NULL;
+    nuevo_proceso->siguiente = NULL;
+    nuevo_proceso->exit_code = -1;
+    nuevo_proceso->pid = pid;
+    nuevo_proceso->tiempo_inicio = time(NULL);
+    nuevo_proceso->tiempo_final = 0; 
+    
+    struct proceso* proceso_actual = procesos;
+    while(proceso_actual->siguiente != NULL){
+      proceso_actual = proceso_actual->siguiente;
+    }
+    nuevo_proceso->anterior = proceso_actual;
+    proceso_actual->siguiente = nuevo_proceso;
+  }
+}
+
+/* Yo creo que se va a tener que hacer función para ver lo de los terminos
+ de procesos y sus exit_code
+ Tal vez podría recorrer la cosa buscando el proceso y de ahí actualizar
+ 
+ O mejor, voy a crear función buscar proceso por PID, que retorne un struct
+  proceso* cosa que de ahí lo pueda modificar
+ */
+
+ void liberar_procesos(struct proceso* procesos){
+  struct proceso* proceso_actual = procesos;
+  struct proceso* proceso_a_liberar;
+  printf("== Liberando procesos\n");
+  while(proceso_actual != NULL){
+    proceso_a_liberar = proceso_actual;
+    proceso_actual = proceso_actual->siguiente;
+    printf("=== Liberando proceso con PID = {%d}\n", proceso_a_liberar->pid);
+    free(proceso_a_liberar);
+  }
+ }
+
+
+
+
+
+
+ void start(const char *executable_path, char *const argv[], struct proceso* procesos){
   /* Tomar ruta del executable y sus argumentos y los ejecuta
    con nu nuevo proceso
   Caso 1: Executable no existe
@@ -78,57 +154,6 @@ void info(){
 
 
 
-void agregar_proceso(struct proceso* procesos, char name[256], pid_t pid){
-  if(procesos == NULL){
-    strcpy(procesos->nombre, name);
-    printf(">>>> testeando nombre %s v/s copiado %s\n", name, procesos->nombre);
-    procesos->anterior = NULL;
-    procesos->siguiente = NULL;
-    procesos->exit_code = -1;
-    procesos->pid = pid;
-    procesos->tiempo_inicio = time(NULL);
-    procesos->tiempo_final = 0;
-  }
-  else{
-    struct proceso* nuevo_proceso = calloc(1, sizeof(struct proceso));
-    strcpy(nuevo_proceso->nombre, name);
-    printf(">>>> testeando nombre %s v/s copiado %s\n", name, nuevo_proceso->nombre);
-    nuevo_proceso->anterior = NULL;
-    nuevo_proceso->siguiente = NULL;
-    nuevo_proceso->exit_code = -1;
-    nuevo_proceso->pid = pid;
-    nuevo_proceso->tiempo_inicio = time(NULL);
-    nuevo_proceso->tiempo_final = 0; 
-    
-    struct proceso* proceso_actual = procesos;
-    while(proceso_actual->siguiente != NULL){
-      proceso_actual = proceso_actual->siguiente;
-    }
-    nuevo_proceso->anterior = proceso_actual;
-    proceso_actual->siguiente = nuevo_proceso;
-  }
-}
-
-/* Yo creo que se va a tener que hacer función para ver lo de los terminos
- de procesos y sus exit_code
- Tal vez podría recorrer la cosa buscando el proceso y de ahí actualizar
- 
- O mejor, voy a crear función buscar proceso por PID, que retorne un struct
-  proceso* cosa que de ahí lo pueda modificar
- */
-
- void liberar_procesos(struct proceso* procesos){
-  struct proceso* proceso_actual = procesos;
-  struct proceso* proceso_a_liberar;
-  printf("== Liberando procesos\n");
-  while(proceso_actual != NULL){
-    proceso_a_liberar = proceso_actual;
-    proceso_actual = proceso_actual->siguiente;
-    printf("=== Liberando proceso con PID = {%d}\n", proceso_a_liberar->pid);
-    free(proceso_a_liberar);
-  }
- }
-
 int main(int argc, char const *argv[])
 {
   char** input = read_user_input();
@@ -140,6 +165,7 @@ int main(int argc, char const *argv[])
   struct proceso* procesos = calloc(1, sizeof(struct proceso));
   // Hacr análisis de casos según command
   // Caso start
+    // Aquí creo proceso y lo agrego a la LL
   // Caso info
   // Caso timeout
   // Caso quit
