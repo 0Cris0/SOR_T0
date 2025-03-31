@@ -21,7 +21,7 @@
 
 
 
-
+// Agregar exit code y sigint
 typedef struct proceso {
   // Para lista ligada (LL)
   struct proceso* siguiente;
@@ -29,10 +29,9 @@ typedef struct proceso {
   // Información del proceso
   pid_t pid;
   char nombre[256];
-  int tiempo_inicio;
-  int tiempo_final; // Ver qué conviene más en esto, si tener como atributo
-  // o si solo armarlo cuando al final necesitemos imprimir
+  time_t tiempo_inicio;
   int exit_code;
+  int signal;
 } Proceso;
 
 
@@ -40,7 +39,7 @@ typedef struct proceso {
 
 
 
-
+// Podría ser el nombre del proceso un atributo de proceso?
 
 
 void agregar_proceso(struct proceso* procesos, char* name, pid_t pid){
@@ -54,7 +53,6 @@ void agregar_proceso(struct proceso* procesos, char* name, pid_t pid){
     procesos->exit_code = -1;
     procesos->pid = pid;
     procesos->tiempo_inicio = time(NULL);
-    procesos->tiempo_final = 0;
   printf("Ha quedado el head con PID = %d\n", procesos->pid);
   }
   else{
@@ -65,7 +63,7 @@ void agregar_proceso(struct proceso* procesos, char* name, pid_t pid){
     nuevo_proceso->exit_code = -1;
     nuevo_proceso->pid = pid;
     nuevo_proceso->tiempo_inicio = time(NULL);
-    nuevo_proceso->tiempo_final = 0; 
+   // nuevo_proceso->tiempo_final = 0; 
     
     struct proceso* proceso_actual = procesos;
     while(proceso_actual->siguiente != NULL){
@@ -157,16 +155,78 @@ void start(char** input, struct proceso* procesos){
 }
 
 
+void info(struct proceso* procesos){
+  time_t tiempo_actual;
+  // Se asume que puntero_procesos es una variable global
+  Proceso* actual = procesos;  
 
+  printf("***  INFORMACIÓN DE PROCESOS *****\n");
+  // Recorrer la lista mientras el puntero 'actual' no sea NULL
+  while (actual != NULL) {
+      // Imprimir la información del proceso actual
+      printf("Nombre: %s\n", actual->nombre);
+      printf("Información del proceso:\n");
+      printf("PID: %d\n", actual->pid);
+      tiempo_actual = time(NULL);
+      printf("Tiempo de ejecución: %ld segundos\n", tiempo_actual - actual->tiempo_inicio);
+      printf("Exit code: %d\n", actual->exit_code);
+      printf("Signal value: %d\n", actual->signal);
+      printf("\n");
+
+      // Mover al siguiente proceso en la lista
+      actual = actual->siguiente;
+  }
+}
 
 
 
 int main(int argc, char const *argv[])
 {
   bool consola_activa = true;
-  printf("=== Bienvenido/a a DCC-Admin ===\n");
+  printf("\n=== Bienvenido/a a DCC-Admin ===\n");
   printf("=== ------<--------->------- ===\n");
   struct proceso* procesos = calloc(1, sizeof(struct proceso));
+
+/*   // Instancia de proceso p1
+  Proceso p1;
+  strcpy(p1.nombre, "Proceso 1");
+  p1.pid = 10000;
+  p1.anterior = NULL;
+  p1.siguiente = NULL;
+  p1.exit_code = -1;
+  p1.tiempo_inicio = time(NULL);
+  p1.signal = 0;
+  // Instancia p2
+  sleep(1);
+  Proceso p2;
+  strcpy(p2.nombre, "Proceso 2");
+  p2.pid = 20000;
+  p2.anterior = NULL;
+  p2.siguiente = NULL;
+  p2.exit_code = -1;
+  p2.tiempo_inicio = time(NULL);
+  p2.signal = 0;
+  // Instancia P3
+  sleep(1);
+  Proceso p3;
+  strcpy(p3.nombre, "Proceso 3");
+  p3.pid = 30000;
+  p3.anterior = NULL;
+  p3.siguiente = NULL;
+  p3.exit_code = -1;
+  p3.tiempo_inicio = time(NULL);
+  p3.signal = 0;
+  // Enlazar procesos como lista ligada
+  p1.siguiente = &p2;
+  p2.anterior = &p1;
+  p2.siguiente = &p3;
+  p3.anterior = &p2;
+  p3.siguiente = NULL;
+  // Imprimir lista enlazada
+
+  puntero_procesos = &p1;
+
+  info(); */
 
   while(true){
     if(!consola_activa){
@@ -208,4 +268,3 @@ int main(int argc, char const *argv[])
   } 
   return 0;
 }
-
