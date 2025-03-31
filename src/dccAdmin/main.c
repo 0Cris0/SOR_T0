@@ -159,7 +159,7 @@ void info(struct proceso* procesos){
   time_t tiempo_actual;
   // Se asume que puntero_procesos es una variable global
   Proceso* actual = procesos;  
-
+  printf("=== ******<--------->******* ===\n");
   printf("***  INFORMACIÓN DE PROCESOS *****\n");
   // Recorrer la lista mientras el puntero 'actual' no sea NULL
   while (actual != NULL) {
@@ -176,6 +176,7 @@ void info(struct proceso* procesos){
       // Mover al siguiente proceso en la lista
       actual = actual->siguiente;
   }
+  printf("=== ******<--------->******* ===\n");
 }
 
 
@@ -251,7 +252,7 @@ int main(int argc, char const *argv[])
       start(input, procesos);
     }
     else if(strcmp(input[0], "info")==0){
-      //
+      info(procesos);
     }
     else if(strcmp(input[0], "timeout")==0){
       //
