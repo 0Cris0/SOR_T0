@@ -31,32 +31,24 @@ typedef struct proceso {
   pid_t pid;
   char nombre[256];
   time_t tiempo_inicio;
+  time_t tiempo_final;
   int exit_code;
   int signal;
 } Proceso;
 
-/* void handler_sigint(int señal){
-  printf("Aquí estoy");
-}
-
-signal(SIGINT, handler_sigint); */
-
 
 // Podría ser el nombre del proceso un atributo de proceso?
-
+struct proceso* procesos;
 
 void agregar_proceso(struct proceso* procesos, char* name, pid_t pid){
-  /* printf("++++++++ procesos puntero = %p\n", procesos);
-  printf("++++++++ procesos PID = %d\n", procesos->pid); */
   if(procesos->pid == 0){
-    // Testear que se cumpla
     strcpy(procesos->nombre, name);
     procesos->anterior = NULL;
     procesos->siguiente = NULL;
     procesos->exit_code = -1;
     procesos->pid = pid;
     procesos->tiempo_inicio = time(NULL);
-  printf("Ha quedado el head con PID = %d\n", procesos->pid);
+  //printf("Ha quedado el head con PID = %d\n", procesos->pid);
   }
   else{
     struct proceso* nuevo_proceso = calloc(1, sizeof(struct proceso));
@@ -66,7 +58,6 @@ void agregar_proceso(struct proceso* procesos, char* name, pid_t pid){
     nuevo_proceso->exit_code = -1;
     nuevo_proceso->pid = pid;
     nuevo_proceso->tiempo_inicio = time(NULL);
-   // nuevo_proceso->tiempo_final = 0; 
     
     struct proceso* proceso_actual = procesos;
     while(proceso_actual->siguiente != NULL){
@@ -74,17 +65,44 @@ void agregar_proceso(struct proceso* procesos, char* name, pid_t pid){
     }
     nuevo_proceso->anterior = proceso_actual;
     proceso_actual->siguiente = nuevo_proceso;
-  printf("Ha agregado proceso con PID = %d\n", nuevo_proceso->pid);
+  //printf("Ha agregado proceso con PID = %d\n", nuevo_proceso->pid);
   }
 }
 
-/* Yo creo que se va a tener que hacer función para ver lo de los terminos
- de procesos y sus exit_code
- Tal vez podría recorrer la cosa buscando el proceso y de ahí actualizar
- 
- O mejor, voy a crear función buscar proceso por PID, que retorne un struct
-  proceso* cosa que de ahí lo pueda modificar
- */
+Proceso* buscar_proceso(pid_t pid_buscado, Proceso* procesos) {
+  Proceso* proceso_actual = procesos; // Lista ligada (puntero al primer elemento)
+  while (proceso_actual != NULL) {
+      if (proceso_actual->pid == pid_buscado) {
+          return proceso_actual; // Retorna el puntero del proceso buscado
+      }
+      proceso_actual = proceso_actual->siguiente;
+  }
+  return NULL;
+}
+
+void modificar_exit_code(Proceso* proceso, int nuevo_exit_code) {
+  if (proceso != NULL) {
+      proceso->exit_code = nuevo_exit_code;
+      // Solo en el caso que haya terminado actualizo el tiempo final<
+      if(nuevo_exit_code != -1){
+        proceso->tiempo_final = difftime(time(NULL), proceso->tiempo_inicio); //TODO: Ver que sea en seg
+      }
+  } else {
+      printf("Error: El puntero al proceso es NULL\n");
+  }
+}
+
+void modificar_signal(Proceso* proceso, int signal){
+  if (proceso != NULL) {
+    proceso->signal = signal;
+  } else {
+      printf("Error: El puntero al proceso es NULL\n");
+  }
+}
+void actualizar_proceso(Proceso* proceso, int signal, int nuevo_exit_code){
+  modificar_exit_code(proceso, nuevo_exit_code);
+  modificar_signal(proceso, signal);
+}
 
  void liberar_procesos(struct proceso* procesos){
   struct proceso* proceso_actual = procesos;
@@ -133,13 +151,12 @@ void start(char** input, struct proceso* procesos){
             free(copia_args[k]);
           }
           free(copia_args);
-          
-          //-------
-          // Debo agregar manera de que termine
+          exit(EXIT_FAILURE);
       default:
           // Padre
           agregar_proceso(procesos, input[1], pid);
-          int status;
+          //TODO:
+/*            int status;
           pid_t resultado = waitpid(pid, &status, WNOHANG); //TODO: ver si esto funciona
           // Debo agregar manera de que espere al hijo
           
@@ -149,8 +166,8 @@ void start(char** input, struct proceso* procesos){
           }
           else{
             printf("> Hijo ya terminó, continuando ejecución\n");
-            //printf("> Status hijo: %d", status);
-          }
+            //printf("> Status hijo: %d", status); 
+          }*/
       }
   }
   else{
@@ -171,12 +188,12 @@ void info(struct proceso* procesos){
   while (actual != NULL) {
       // Imprimir la información del proceso actual
       printf("Nombre: %s\n", actual->nombre);
-      printf("Información del proceso:\n");
-      printf("PID: %d\n", actual->pid);
+      printf(" - Información del proceso:\n");
+      printf(" - PID: %d\n", actual->pid);
       tiempo_actual = time(NULL);
-      printf("Tiempo de ejecución: %ld segundos\n", tiempo_actual - actual->tiempo_inicio);
-      printf("Exit code: %d\n", actual->exit_code);
-      printf("Signal value: %d\n", actual->signal);
+      printf(" - Tiempo de ejecución: %ld s\n", actual->tiempo_final);
+      printf(" - Exit code: %d\n", actual->exit_code);
+      printf(" - Signal value: %d\n", actual->signal);
       printf("\n");
 
       // Mover al siguiente proceso en la lista
@@ -229,21 +246,17 @@ void timeout(struct proceso* procesos, int tiempo){
   }
 }
 
-void quit(struct proceso* procesos, int tiempo){
-  // Si hay procesos ejecutandose
-  // Enviar SIGNINT
-  // Esperar 10s
-  // Enviar SIGKILL
-  // Imprimir estadísticas
+void quit(struct proceso* procesos){
   printf("DCCAdmin finalizado\n");
   if(procesos->pid != 0){
+    // Obtengo referencia al proceso final
     struct proceso* proceso_actual = procesos;
     struct proceso* proceso_final = NULL;
     while(proceso_actual != NULL){
       proceso_final = proceso_actual;
       proceso_actual = proceso_actual->siguiente;
     }
-    // Así tengo referencia al proceso final
+    
     // Envio el SIGINT
     proceso_actual = proceso_final;
     while(proceso_actual != NULL){
@@ -252,44 +265,74 @@ void quit(struct proceso* procesos, int tiempo){
         proceso_actual = proceso_actual->anterior;
       }
     }
+
     // Ahora espero 10s
     time_t tiempo_inicial = time(NULL);
     while(difftime(time(NULL), tiempo_inicial)<10){
       // Aquí espero;
     }
+
     // Ahora empiezo a mandar los SIGKILL
     proceso_actual = proceso_final;
     while(proceso_actual != NULL){
+      // Si está activo y si no es el que ejecuta el código
       if(proceso_actual->exit_code == -1 && proceso_actual->pid != getpid() && proceso_actual->pid > 0){
+        // Ahora reviso el estado del proceso
         int status;
-        pid_t resultado = waitpid(proceso_actual->pid, &status, WNOHANG); // Qué será mejor, aquí o allá
+        pid_t resultado = waitpid(proceso_actual->pid, &status, WNOHANG);
         if(resultado == 0){
           // Mando SIGKILLS porque proceso no ha terminado
           kill(proceso_actual->pid, SIGKILL);
-          waitpid(proceso_actual->pid, &status, 0); // TODO: Ver para qué sirve eso
-          // TODO: Actualizar el exit_code del status (WEXITSTATUS(status)) y colocar el tiempo de ejecución
-          /* Buscar en LL procesos
-            Teniendo proceso actualizar exit code y/o tiempo de ejecutción */
+          //TODO: 
+          /* // Ahora espero que termine bien su cierre
+          waitpid(proceso_actual->pid, &status, 0); */
+          //Ver si conviene hacer ese o este, porque quiero saber el estado del proceso
+          // Pero a la vez como estoy en SIGKILL no sé si esperarlo o no
+          waitpid(proceso_actual->pid, &status, WNOHANG);
+          actualizar_proceso(proceso_actual, 9, WEXITSTATUS(status));
+
         }
         else{
-          // Aquí ya habría terminado solo y debería tener código de status
-          // TODO: Actualizar el exit_code del status (WEXITSTATUS(status)) y colocar el tiempo de ejecución
+          actualizar_proceso(proceso_actual, 2, WEXITSTATUS(status));
         }
         proceso_actual = proceso_actual->anterior;
       }
       // Imprimir estadísticas
+      info(procesos);
     }
-    // Continuar y liberar las cosas (LL e input posiblemente)
+  }
+  // Liberar las cosas y terminar ejecución
+  liberar_procesos(procesos);
+  printf("[>] Cerrando consola [<]\n");
+  exit(0);
+}
+
+void sigint_handler(int señal){
+  quit(procesos);
+}
+
+void sigchld_handler(int señal){
+  // https://stackoverflow.com/questions/7171722/how-can-i-handle-sigchld
+  // stackoverflow.com/questions/7155810/example-of-waitpid-wnohang-and-sigchld?noredirect=1&lq=1
+  int status;
+  pid_t pid;
+  while((pid=waitpid(-1, &status, WNOHANG))>0){
+    struct proceso* proceso_actual = buscar_proceso(pid, procesos);
+    actualizar_proceso(proceso_actual, 17, WEXITSTATUS(status));
   }
 }
+
 
 
 int main(int argc, char const *argv[])
 {
   bool consola_activa = true;
+  signal(SIGINT, sigint_handler);
+  signal(SIGCHLD, sigchld_handler);
+
   printf("\n=== Bienvenido/a a DCC-Admin ===\n");
   printf("=== ------<--------->------- ===\n");
-  struct proceso* procesos = calloc(1, sizeof(struct proceso));
+  procesos = calloc(1, sizeof(struct proceso));
 
 /*   // Instancia de proceso p1
   Proceso p1;
