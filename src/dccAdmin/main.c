@@ -179,6 +179,54 @@ void info(struct proceso* procesos){
   printf("=== ******<--------->******* ===\n");
 }
 
+void timeout(struct proceso* procesos, int tiempo){
+  if(procesos->pid != 0){
+    printf("No hay procesos en ejecución. Timeout no se puede ejecutar.\n");
+  }
+  else{
+    int procesos_activos = 0;
+    struct proceso* proceso_actual = procesos;
+    while(proceso_actual != NULL){
+      if(proceso_actual->exit_code == -1){
+        procesos_activos+=1;
+      }
+      proceso_actual = proceso_actual->siguiente;
+    }
+    if(procesos_activos==0){
+      printf("No hay procesos en ejecución. Timeout no se puede ejecutar.\n");
+    }
+    else{
+      // TODO: Esperar que transcurra "tiempo"
+      proceso_actual = procesos;
+      while(proceso_actual != NULL){
+        if(proceso_actual->exit_code == -1){
+          printf("Timeout cumplido!\n");
+          int tiempo_ejecucion = time(NULL)-proceso_actual->tiempo_inicio;
+          printf("%d %s %d %d %d", proceso_actual->pid, proceso_actual->nombre, tiempo_ejecucion, proceso_actual->exit_code, proceso_actual->signal);
+          // TODO: Enviar SIGTERM
+        }
+        proceso_actual = proceso_actual->siguiente;
+      }
+    }
+  }
+}
+
+void quit(struct proceso* procesos, int tiempo){
+  // Si hay procesos ejecutandose
+  // Enviar SIGNINT
+  // Esperar 10s
+  // Enviar SIGKILL
+  // Imprimir estadísticas
+  printf("DCCAdmin finalizado\n");
+  if(procesos->pid != 0){
+    struct proceso* proceso_actual = procesos;
+    while(proceso_actual != NULL){
+      int tiempo_ejecucion = time(NULL)-proceso_actual->tiempo_inicio;
+      printf("%d %s %d %d %d", proceso_actual->pid, proceso_actual->nombre, tiempo_ejecucion, proceso_actual->exit_code, proceso_actual->signal);
+      proceso_actual = proceso_actual->siguiente;
+    }
+  }
+}
 
 
 int main(int argc, char const *argv[])
@@ -258,7 +306,8 @@ int main(int argc, char const *argv[])
       //
     }
     else if(strcmp(input[0], "quit")==0){
-      //
+      // 
+      // Ver cómo equiparar con Ctrl+C
       // Liberar procesos y memoria van aquí
       consola_activa = false;
     }
