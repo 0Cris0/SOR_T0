@@ -197,8 +197,8 @@ void info(struct proceso* procesos){
       printf(" - Tiempo de ejecución: %ld s\n", actual->tiempo_final);
       printf(" - Exit code: %d\n", actual->exit_code);
       printf(" - Signal value: %d\n", actual->signal);
-      printf(" - [%p]", actual);
-      printf(" - Anterior [%p], Siguiente [%p]", actual->anterior, actual->siguiente);
+      //printf(" - [%p]", actual);
+      //printf(" - Anterior [%p], Siguiente [%p]", actual->anterior, actual->siguiente);
       printf("\n");
 
       // Mover al siguiente proceso en la lista
@@ -254,15 +254,27 @@ void timeout(struct proceso* procesos, int tiempo){
   }
 }
 
-void wait_s(int seconds)   // waits for "seconds" seconds
-{
-  //https://stackoverflow.com/questions/10922900/is-it-possible-to-wait-a-few-seconds-before-printing-a-new-line-in-c
-    clock_t start_time = clock();
-    while (clock() < start_time + seconds*1000);
+int contar_hijos() {
+  int count = 0;
+  pid_t pid;
+  while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
+      count++;
+      printf("PID: {%d}", pid);
+  }
+  return count;
+}
+
+void delay(int seconds) { 
+  // https://www.quora.com/How-do-I-call-delay-in-C-programming
+  int milliseconds = seconds * 1000;
+  clock_t end_time = clock() + seconds * (CLOCKS_PER_SEC); 
+  while (clock() < end_time){
+    //printf("-- clock = %ld\n", clock()/CLOCKS_PER_SEC);
+  }
 }
 
 void quit(struct proceso* procesos){
-  printf("DCCAdmin finalizado\n");
+  printf("\nDCCAdmin finalizado\n");
   if(procesos->pid != 0){
     
     // Obtengo referencia al proceso final
@@ -279,6 +291,7 @@ void quit(struct proceso* procesos){
     while(proceso_actual != NULL){
       //printf(">>>>>>>> En proceso pid = %d\n", proceso_actual->pid);
       if(proceso_actual->exit_code == -1 && proceso_actual->pid != getpid() && proceso_actual->pid > 0){
+        
         //printf(">>>>>>>> Enviando SIGNINT a proceso %d\n", proceso_actual->pid);
         kill(proceso_actual->pid, SIGINT);
         int status;
@@ -290,9 +303,9 @@ void quit(struct proceso* procesos){
 
     // Ahora espero 10s
     // TODO: Creo que esto no esta esperando 10s
-    //printf(">>>> Esperando 10s\n");
-    wait_s(10); 
-    //printf(">>>> Continuando...\n");
+    printf(">>>> Esperando 10s\n");
+    delay(10);
+    printf(">>>> Continuando...\n");
 
     // Ahora empiezo a mandar los SIGKILL
     //printf(">>>> Checkeando si es necesario mandar SIGKILLs\n");
