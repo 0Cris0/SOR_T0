@@ -65,7 +65,7 @@ void agregar_proceso(struct proceso* procesos, char* name, pid_t pid){
     while(proceso_actual->siguiente != NULL){
       proceso_actual = proceso_actual->siguiente;
     }
-    printf("--- Asignando anterior y sig\n");
+    //printf("--- Asignando anterior y sig\n");
     nuevo_proceso->anterior = proceso_actual;
     proceso_actual->siguiente = nuevo_proceso;
   //printf("Ha agregado proceso con PID = %d\n", nuevo_proceso->pid);
@@ -84,6 +84,7 @@ Proceso* buscar_proceso(pid_t pid_buscado, Proceso* procesos) {
 }
 
 void modificar_exit_code(Proceso* proceso, int nuevo_exit_code) {
+  //printf(">>>>>> Modificando EC de PID = %d\n", proceso->pid);
   if (proceso != NULL) {
     proceso->exit_code = nuevo_exit_code;
     // Solo en el caso que haya terminado actualizo el tiempo final<
@@ -91,7 +92,7 @@ void modificar_exit_code(Proceso* proceso, int nuevo_exit_code) {
       proceso->tiempo_final = difftime(time(NULL), proceso->tiempo_inicio); //TODO: Ver que sea en seg
     }
   } else {
-      printf("Error: El puntero al proceso es NULL\n");
+      printf("[Error]: El puntero al proceso es NULL\n");
   }
 }
 
@@ -108,15 +109,15 @@ void actualizar_proceso(Proceso* proceso, int signal, int nuevo_exit_code){
  void liberar_procesos(struct proceso* procesos){
   struct proceso* proceso_actual = procesos;
   struct proceso* proceso_a_liberar;
-  printf("\n== Liberando procesos\n");
-  printf("=======================\n");
+  //printf("\n== Liberando procesos\n");
+  //printf("=======================\n");
   while(proceso_actual != NULL){
     proceso_a_liberar = proceso_actual;
     proceso_actual = proceso_actual->siguiente;
-    printf("--- Liberando proceso con PID = {%d}\n", proceso_a_liberar->pid);
+    //printf("--- Liberando proceso con PID = {%d}\n", proceso_a_liberar->pid);
     free(proceso_a_liberar);
   }
-  printf("=======================\n");
+  //printf("=======================\n");
  }
 
  void delay(int seconds) { 
@@ -217,6 +218,21 @@ void info(struct proceso* procesos){
   printf("=== ******<--------->******* ===\n");
 }
 
+void print_proc(struct proceso* procesos){
+  struct proceso* proceso_actual = procesos;
+  while(proceso_actual != NULL){
+/*     printf("iiiii\n");
+    printf(" PID: [%d] %s\n", proceso_actual->pid, proceso_actual->nombre);
+      printf(" - Tiempo de ejecución: %ld s\n", proceso_actual->tiempo_final);
+      printf(" - Exit code: %d\n", proceso_actual->exit_code);
+      printf(" - Signal value: %d\n", proceso_actual->signal); */
+    printf("%d %s %ld %d %d\n", proceso_actual->pid, proceso_actual->nombre, proceso_actual->tiempo_final, proceso_actual->exit_code, proceso_actual->signal);
+    //printf("iiia\n");
+    proceso_actual = proceso_actual->siguiente;
+    //printf("ii22i\n");
+  }
+}
+
 void timeout(struct proceso* procesos, char** input){
 
 
@@ -267,9 +283,9 @@ void timeout(struct proceso* procesos, char** input){
       }
       else{
         // TODO: Esperar que transcurra "tiempo"
-        printf(">>>> Esperando %ds\n", tiempo);
+        //printf(">>>> Esperando %ds\n", tiempo);
         delay(tiempo);
-        printf(">>>> Continuando...\n");
+        //printf(">>>> Continuando...\n");
         //
         proceso_actual = proceso_final;
         while(proceso_actual != NULL){
@@ -310,6 +326,7 @@ void quit(struct proceso* procesos){
     //printf(">>>> Checkeando si es necesario mandar SIGINTs\n");
     while(proceso_actual != NULL){
       //printf(">>>>>>>> En proceso pid = %d\n", proceso_actual->pid);
+      //printf(">>>>>>>> Exit code = %d\n", proceso_actual->exit_code);
       if(proceso_actual->exit_code == -1 && proceso_actual->pid != getpid() && proceso_actual->pid > 0){
         
         //printf(">>>>>>>> Enviando SIGNINT a proceso %d\n", proceso_actual->pid);
@@ -323,9 +340,9 @@ void quit(struct proceso* procesos){
 
     // Ahora espero 10s
     // TODO: Creo que esto no esta esperando 10s
-    printf(">>>> Esperando 10s\n");
+    //printf(">>>> Esperando 10s\n");
     delay(10);
-    printf(">>>> Continuando...\n");
+    //printf(">>>> Continuando...\n");
 
     // Ahora empiezo a mandar los SIGKILL
     //printf(">>>> Checkeando si es necesario mandar SIGKILLs\n");
@@ -354,7 +371,8 @@ void quit(struct proceso* procesos){
     }
     // Imprimir estadísticas
     //printf(">>>>>>>> STATS\n");
-    info(procesos);
+    //info(procesos);
+    print_proc(procesos);
   }
   // Liberar las cosas y terminar ejecución
   //printf(">>>>>>>> Liberando\n");
