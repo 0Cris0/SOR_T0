@@ -38,7 +38,7 @@ Se implementaron los siguientes comandos:
     * Comando que recibe una ruta de un ejecutable y los argumentos que necesite. Lo ejecuta mediante un nuevo proceso.
 * ✅:`info`
     * Comando que entrega la información (imprime en consola) de todos los programas que fueron ejecutados y se encuentran ejecutando.
-* 🟨:`timeout`
+*  ✅:`timeout`
     * Recibe el argumento < time > y termina todos los procesos que se estén ejecutando en el programa. Si un proceso no finaliza dentro del tiempo < time >, se envía la señal SIGTERM
 * ✅:`quit`
     * Termina el programa principal dccadmin y ciera los procesos que aún estén ejecutandose.
@@ -48,8 +48,6 @@ Se implementaron los siguientes comandos:
 - `wait()`: Suspende la ejecución del proceso actual (padre) hasta que un proceso hijo termine.
 - `waitpid()`: Espera la terminación de un proceso hijo específico. Permite mayor control que `wait()`.
 - `execv()`: Reemplaza el proceso actual con un nuevo programa, pasando losargumentos en un array.  
-
-## Observaciones
 
 ## Referencias
 Para la elaboración de la tarea, nos basamos en las siguientes fuentes:
