@@ -63,6 +63,7 @@ void agregar_proceso(struct proceso* procesos, char* name, pid_t pid){
     while(proceso_actual->siguiente != NULL){
       proceso_actual = proceso_actual->siguiente;
     }
+    printf("--- Asignando anterior y sig\n");
     nuevo_proceso->anterior = proceso_actual;
     proceso_actual->siguiente = nuevo_proceso;
   //printf("Ha agregado proceso con PID = %d\n", nuevo_proceso->pid);
@@ -130,6 +131,7 @@ void start(char** input, struct proceso* procesos){
           perror("[Error]: Error en el fork\n");
           exit(EXIT_FAILURE);
       case 0:
+        //printf("HIJO\n");
           // Hijo;
           int cantidad_args = 0;
           for(int i=1; input[i]!=NULL; i++){
@@ -153,6 +155,7 @@ void start(char** input, struct proceso* procesos){
           free(copia_args);
           exit(EXIT_FAILURE);
       default:
+        //printf("PADRE\n");
           // Padre
           agregar_proceso(procesos, input[1], pid);
           //TODO:
@@ -179,26 +182,31 @@ void start(char** input, struct proceso* procesos){
 
 
 void info(struct proceso* procesos){
-  time_t tiempo_actual;
   // Se asume que puntero_procesos es una variable global
-  Proceso* actual = procesos;  
+  Proceso* actual = procesos;
   printf("=== ******<--------->******* ===\n");
   printf("***  INFORMACIÓN DE PROCESOS *****\n");
-  // Recorrer la lista mientras el puntero 'actual' no sea NULL
-  while (actual != NULL) {
+  if(actual->pid == 0){
+    printf("\n[Warning]: No hay procesos en ejecución\n\n");
+  }
+  else{
+    // Recorrer la lista mientras el puntero 'actual' no sea NULL
+    while (actual != NULL) {
       // Imprimir la información del proceso actual
-      printf("Nombre: %s\n", actual->nombre);
-      printf(" - Información del proceso:\n");
-      printf(" - PID: %d\n", actual->pid);
-      tiempo_actual = time(NULL);
+      printf(" PID: [%d] %s\n", actual->pid, actual->nombre);
       printf(" - Tiempo de ejecución: %ld s\n", actual->tiempo_final);
       printf(" - Exit code: %d\n", actual->exit_code);
       printf(" - Signal value: %d\n", actual->signal);
+      printf(" - [%p]", actual);
+      printf(" - Anterior [%p], Siguiente [%p]", actual->anterior, actual->siguiente);
       printf("\n");
 
       // Mover al siguiente proceso en la lista
       actual = actual->siguiente;
+    }
   }
+  
+  
   printf("=== ******<--------->******* ===\n");
 }
 
@@ -246,9 +254,18 @@ void timeout(struct proceso* procesos, int tiempo){
   }
 }
 
+void wait_s(int seconds)   // waits for "seconds" seconds
+{
+  //https://stackoverflow.com/questions/10922900/is-it-possible-to-wait-a-few-seconds-before-printing-a-new-line-in-c
+    clock_t start_time = clock();
+    while (clock() < start_time + seconds*1000);
+}
+
 void quit(struct proceso* procesos){
   printf("DCCAdmin finalizado\n");
+  printf("%d\n", procesos->pid);
   if(procesos->pid != 0){
+    
     // Obtengo referencia al proceso final
     struct proceso* proceso_actual = procesos;
     struct proceso* proceso_final = NULL;
@@ -258,21 +275,27 @@ void quit(struct proceso* procesos){
     }
     
     // Envio el SIGINT
+    printf(">>>>>>>> Enviando SIGNINT\n");
     proceso_actual = proceso_final;
+    printf(">>>>>>>> Final: %p\n", proceso_final);
     while(proceso_actual != NULL){
+      printf(">>>>>>>> En proceso pid = %d\n", proceso_actual->pid);
       if(proceso_actual->exit_code == -1 && proceso_actual->pid != getpid() && proceso_actual->pid > 0){
         kill(proceso_actual->pid, SIGINT);
-        proceso_actual = proceso_actual->anterior;
       }
+      proceso_actual = proceso_actual->anterior;
     }
 
     // Ahora espero 10s
-    time_t tiempo_inicial = time(NULL);
-    while(difftime(time(NULL), tiempo_inicial)<10){
+    /* time_t tiempo_inicial = time(NULL);
+    while(difftime(time(NULL), tiempo_inicial)<1){
+      printf("DIf: %f", difftime(time(NULL), tiempo_inicial));
       // Aquí espero;
-    }
+    } */
+   wait_s(10);
 
     // Ahora empiezo a mandar los SIGKILL
+    printf(">>>>>>>> Enviando SIGKILL\n");
     proceso_actual = proceso_final;
     while(proceso_actual != NULL){
       // Si está activo y si no es el que ejecuta el código
@@ -295,13 +318,15 @@ void quit(struct proceso* procesos){
         else{
           actualizar_proceso(proceso_actual, 2, WEXITSTATUS(status));
         }
-        proceso_actual = proceso_actual->anterior;
       }
-      // Imprimir estadísticas
-      info(procesos);
+      proceso_actual = proceso_actual->anterior;
     }
+    // Imprimir estadísticas
+    printf(">>>>>>>> STATS\n");
+    info(procesos);
   }
   // Liberar las cosas y terminar ejecución
+  printf(">>>>>>>> Liberando\n");
   liberar_procesos(procesos);
   printf("[>] Cerrando consola [<]\n");
   exit(0);
@@ -327,7 +352,7 @@ void sigchld_handler(int señal){
 int main(int argc, char const *argv[])
 {
   bool consola_activa = true;
-  signal(SIGINT, sigint_handler);
+  //signal(SIGINT, sigint_handler);
   signal(SIGCHLD, sigchld_handler);
 
   printf("\n=== Bienvenido/a a DCC-Admin ===\n");
@@ -407,7 +432,7 @@ int main(int argc, char const *argv[])
       // 
       // Ver cómo equiparar con Ctrl+C
       // Liberar procesos y memoria van aquí
-      consola_activa = false;
+      quit(procesos);
     }
     free_user_input(input);
 
