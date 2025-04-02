@@ -16,32 +16,32 @@ Luego, la tarea se ejecuta con *`./dccAdmin [{time_max}]`*, donde se podrá inte
 
 ### Estructura de la tarea
 El archivo principal de la tarea es *`main.C`*. En él, se definieron las siguientes funciones:
-- *`start`*
-- *`info`*
-- *`liberar_proceso`*
-- *`agregar_proceso`*
+- *`agregar_proceso`*: Se encarga de añadir un proceso a la lista ligada.
+-  *`buscar_proceso`*: Retorna el puntero de un proceso buscado según su pid.
+- *`modificar_exit_code`*: Recibe un puntero de procesos y un nuevo exit-code (int). Actualiza el exit code del proceso.
+- *`modificar_signal`*: Actualiza el valor de signal de algún proceso según un int entregado.
+- *`actualizar_proceso`*: Modifica el exit code y el valor de señal de un proceso (es una combinación de las dos funciones anteriores).
+- *`liberar_proceso`*: Se encarga de liberar procesos.
+- *`start`*: Recibe el path de un ejecutable (y la lista de procesos) junto con los argumentos que necesite. Inicia el proceso correspondiente al ejecutable.
+- *`info`*: Recibe la lista de procesos y entrega la información correspondiente a cada uno de los procesos. 
 - *`timeout`*
-- *`quit`*
-- *`actualizar_proceso`*
-- *`modificar_signal`*
-- *`modificar_exit_code`*
--  *`buscar_proceso`*
+- *`quit`*: Función que termina el programa principal y se encarga de matar a los procesos aún activos.
+
+
 
 Además, se definió la estructura *`Proceso`* que consiste en una lista ligada, donde se almcena la información de cada proceso que se crea y ejecuta.
 
 ## Funcionalidades Implementadas
-✅: Completo
-🟨: En proceso de implementación
-🟥: Aún no implementado
+Se implementaron los siguientes comandos:
 
-* 🟥`start`
-    * (Descripción)
-* 🟥`info`
-    * (Descripción)
-* 🟥`timeout`
-    * (Descripción)
-* 🟥`quit`
-    * (Descripción)
+* ✅:`start`
+    * Comando que recibe una ruta de un ejecutable y los argumentos que necesite. Lo ejecuta mediante un nuevo proceso.
+* ✅:`info`
+    * Comando que entrega la información (imprime en consola) de todos los programas que fueron ejecutados y se encuentran ejecutando.
+*  ✅:`timeout`
+    * Recibe el argumento < time > y termina todos los procesos que se estén ejecutando en el programa. Si un proceso no finaliza dentro del tiempo < time >, se envía la señal SIGTERM
+* ✅:`quit`
+    * Termina el programa principal dccadmin y ciera los procesos que aún estén ejecutandose.
 
 ## Syscalls utilizadas
 - `fork()`: Crea un nuevo proceso duplicando el proceso actual.
@@ -49,9 +49,7 @@ Además, se definió la estructura *`Proceso`* que consiste en una lista ligada,
 - `waitpid()`: Espera la terminación de un proceso hijo específico. Permite mayor control que `wait()`.
 - `execv()`: Reemplaza el proceso actual con un nuevo programa, pasando losargumentos en un array.  
 
-## Observaciones
-
 ## Referencias
 Para la elaboración de la tarea, nos basamos en las siguientes fuentes:
 
-- 
+- https://www.quora.com/How-do-I-call-delay-in-C-programming para que el programa espere según la equivalencia de segundos a ciclos de clock.
