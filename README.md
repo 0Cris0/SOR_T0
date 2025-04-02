@@ -16,16 +16,16 @@ Luego, la tarea se ejecuta con *`./dccAdmin [{time_max}]`*, donde se podrá inte
 
 ### Estructura de la tarea
 El archivo principal de la tarea es *`main.C`*. En él, se definieron las siguientes funciones:
-1. *`start`*
-2. *`info`*
-3. *`liberar_proceso`*
-4. *`agregar_proceso`*
-5. *`timeout`*
-6. *`quit`*
-7. *`actualizar_proceso`*
-8. *`modificar_signal`*
-9. *`modificar_exit_code`*
-10. *`buscar_proceso`*
+- *`start`*
+- *`info`*
+- *`liberar_proceso`*
+- *`agregar_proceso`*
+- *`timeout`*
+- *`quit`*
+- *`actualizar_proceso`*
+- *`modificar_signal`*
+- *`modificar_exit_code`*
+-  *`buscar_proceso`*
 
 Además, se definió la estructura *`Proceso`* que consiste en una lista ligada, donde se almcena la información de cada proceso que se crea y ejecuta.
 
@@ -43,4 +43,15 @@ Además, se definió la estructura *`Proceso`* que consiste en una lista ligada,
 * 🟥`quit`
     * (Descripción)
 
+## Syscalls utilizadas
+- `fork()`: Crea un nuevo proceso duplicando el proceso actual.
+- `wait()`: Suspende la ejecución del proceso actual (padre) hasta que un proceso hijo termine.
+- `waitpid()`: Espera la terminación de un proceso hijo específico. Permite mayor control que `wait()`.
+- `execv()`: Reemplaza el proceso actual con un nuevo programa, pasando losargumentos en un array.  
+
 ## Observaciones
+
+## Referencias
+Para la elaboración de la tarea, nos basamos en las siguientes fuentes:
+
+- 
