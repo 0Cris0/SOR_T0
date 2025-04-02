@@ -41,7 +41,12 @@ Se implementaron los siguientes comandos:
 *  ✅:`timeout`
     * Recibe el argumento < time > y termina todos los procesos que se estén ejecutando en el programa. Si un proceso no finaliza dentro del tiempo < time >, se envía la señal SIGTERM
 * ✅:`quit`
-    * Termina el programa principal dccadmin y ciera los procesos que aún estén ejecutandose.
+    * Termina el programa principal dccadmin y ciera los procesos que aún estén ejecutandose. Se muestran las estadísticas de los procesos ejecutados segun lo pedido.
+    * Consideración: Al momento de ejecutar Ctrl+C si bien si activa el sistema de quit por alguna razón que no alcanzamos a indagar se cierran automáticamente los procesos sin activar la función de cambio de signal (creo). Esto no ocurre cuando uno hace 'quit' normal.
+* ✅:`paralelismo y no bloqueo`
+    * Según nuestros tests no se generan bloqueos y los procesos se pueden correr de manera paralela
+* ❌:`time_max`
+    * No se pudo implementar time_max
 
 ## Syscalls utilizadas
 - `fork()`: Crea un nuevo proceso duplicando el proceso actual.

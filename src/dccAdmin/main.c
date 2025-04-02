@@ -155,7 +155,7 @@ void start(char** input, struct proceso* procesos){
           }
           copia_args[cantidad_args] = NULL;
           // Ahora aplico execve
-          execve(input[1], copia_args, NULL);
+          execvp(input[1], copia_args);
           perror("[Error]: Execve ha fallado, por favor revisa que el ejecutable exista y que los argumentos entregados sean correctos\n");
           for(int k=0; k<cantidad_args; k++){
             free(copia_args[k]);
