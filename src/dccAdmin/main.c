@@ -119,6 +119,13 @@ void actualizar_proceso(Proceso* proceso, int signal, int nuevo_exit_code){
   printf("=======================\n");
  }
 
+ void delay(int seconds) { 
+  // https://www.quora.com/How-do-I-call-delay-in-C-programming
+  clock_t end_time = clock() + seconds * (CLOCKS_PER_SEC); 
+  while (clock() < end_time){
+    //printf("-- clock = %ld\n", clock()/CLOCKS_PER_SEC);
+  }
+}
 
 
 
@@ -210,68 +217,81 @@ void info(struct proceso* procesos){
   printf("=== ******<--------->******* ===\n");
 }
 
-void timeout(struct proceso* procesos, int tiempo){
-  // ARREGLAR
-  if(procesos->pid != 0){
-    printf("No hay procesos en ejecución. Timeout no se puede ejecutar.\n");
+void timeout(struct proceso* procesos, char** input){
+
+
+
+  int cantidad_args = 0;
+  for(int i=1; input[i]!=NULL; i++){
+    cantidad_args+=1;
+    //printf("Arg %s\n", input[i]);
+  }
+  char** copia_args = calloc(cantidad_args+1, sizeof(char*));
+  // Ahora recorro los argumentos del input copiándolos y agrego NULL al final
+  //printf("Argumentos entregados:\n");
+
+  for(int j=1; input[j]!=NULL; j++){ //TODO: Considerar volver j=2 para saltarme eel path
+    copia_args[j-1] = strdup(input[j]);
+    //printf("- %s\n", copia_args[j-1]);
+  }
+  copia_args[cantidad_args] = NULL;
+
+  if(cantidad_args == 0 || copia_args[0] == NULL){
+    perror("[Error]: Error en el timeout, por favor entregue un 'time' válido\n");
   }
   else{
-    // Creo conveniente partir desde atrás liberando porque esos serían los procesos hijos
-    // Sino puede que mate un proceso padre sin haberme encargado de los hijos
-    int procesos_activos = 0;
-    struct proceso* proceso_actual = procesos;
-    struct proceso* proceso_final = NULL;
-    while(proceso_actual != NULL){
-      // Ver si aquí agregar la actualización de exit_code
-      if(proceso_actual->exit_code == -1){
-        procesos_activos+=1;
-      }
-      proceso_final = proceso_actual;
-      proceso_actual = proceso_actual->siguiente;
-    }
-    if(procesos_activos==0){
+    int tiempo_str = atoi(copia_args[0]);
+    int tiempo = tiempo_str;
+    //printf("tiempo %d v/s copia args %s\n", tiempo, copia_args[0]);
+    free(copia_args);
+
+    if(procesos->pid == 0){
       printf("No hay procesos en ejecución. Timeout no se puede ejecutar.\n");
     }
     else{
-      // TODO: Esperar que transcurra "tiempo"
-      time_t tiempo_inicial = time(NULL);
-      while(difftime(time(NULL), tiempo_inicial)<tiempo){
-        // Aquí espero;
-      }
-      //
-      proceso_actual = proceso_final;
+      // Creo conveniente partir desde atrás liberando porque esos serían los procesos hijos
+      // Sino puede que mate un proceso padre sin haberme encargado de los hijos
+      int procesos_activos = 0;
+      struct proceso* proceso_actual = procesos;
+      struct proceso* proceso_final = NULL;
       while(proceso_actual != NULL){
+        // Ver si aquí agregar la actualización de exit_code
         if(proceso_actual->exit_code == -1 && proceso_actual->pid != getpid() && proceso_actual->pid > 0){
-          printf("Timeout cumplido!\n");
-          int tiempo_ejecucion = time(NULL)-proceso_actual->tiempo_inicio;
-          printf("%d %s %d %d %d", proceso_actual->pid, proceso_actual->nombre, tiempo_ejecucion, proceso_actual->exit_code, proceso_actual->signal);
-          // TODO: Enviar SIGTERM
-          kill(proceso_actual->pid, SIGTERM);
+          procesos_activos+=1;
         }
-        proceso_actual = proceso_actual->anterior;
+        proceso_final = proceso_actual;
+        proceso_actual = proceso_actual->siguiente;
+      }
+      if(procesos_activos==0){
+        printf("No hay procesos en ejecución. Timeout no se puede ejecutar.\n");
+      }
+      else{
+        // TODO: Esperar que transcurra "tiempo"
+        printf(">>>> Esperando %ds\n", tiempo);
+        delay(tiempo);
+        printf(">>>> Continuando...\n");
+        //
+        proceso_actual = proceso_final;
+        while(proceso_actual != NULL){
+          if(proceso_actual->exit_code == -1 && proceso_actual->pid != getpid() && proceso_actual->pid > 0){
+            printf("Timeout cumplido!\n");
+            proceso_actual->tiempo_final = difftime(time(NULL), proceso_actual->tiempo_inicio);
+            printf("%d %s %ld %d %d\n", proceso_actual->pid, proceso_actual->nombre, proceso_actual->tiempo_final, proceso_actual->exit_code, proceso_actual->signal);
+            // TODO: Enviar SIGTERM
+            kill(proceso_actual->pid, SIGTERM);
+            int status;
+            waitpid(proceso_actual->pid, &status, WNOHANG);
+            actualizar_proceso(proceso_actual, 15, WEXITSTATUS(status));
+          }
+          proceso_actual = proceso_actual->anterior;
+        }
       }
     }
+
+
   }
 }
 
-int contar_hijos() {
-  int count = 0;
-  pid_t pid;
-  while ((pid = waitpid(-1, NULL, WNOHANG)) > 0) {
-      count++;
-      printf("PID: {%d}", pid);
-  }
-  return count;
-}
-
-void delay(int seconds) { 
-  // https://www.quora.com/How-do-I-call-delay-in-C-programming
-  int milliseconds = seconds * 1000;
-  clock_t end_time = clock() + seconds * (CLOCKS_PER_SEC); 
-  while (clock() < end_time){
-    //printf("-- clock = %ld\n", clock()/CLOCKS_PER_SEC);
-  }
-}
 
 void quit(struct proceso* procesos){
   printf("\nDCCAdmin finalizado\n");
@@ -437,7 +457,9 @@ int main(int argc, char const *argv[])
       info(procesos);
     }
     else if(strcmp(input[0], "timeout")==0){
-      // TODO:
+      timeout(procesos, input);
+      
+      
     }
     else if(strcmp(input[0], "quit")==0){
       // 
